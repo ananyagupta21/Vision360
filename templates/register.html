@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Vision360-Login</title>
+  <meta name="description" content="particles.js is a lightweight JavaScript library for creating particles.">
+  <meta name="author" content="Vincent Garreau" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" media="screen" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" media="screen" href="{{ url_for('static', filename='styleform.css') }}">
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet"> 
+</head>
+<body>
+
+  
+  <div class="container">
+    <form >
+      <p>Welcome</p>
+      <input type="email" placeholder="Email"><br>
+      <input type="name" placeholder="Name"><br>
+      <input type="location" placeholder="City"><br>
+      <input type="phone" placeholder="Phone Number"><br>
+      <input type="password" placeholder="Password"><br>
+      <input type="button" value="Sign Up"><br>
+      <a href="#">Already a user? Sign In</a>
+    </form>
+    
+  </div>
+<!-- particles.js container -->
+
+<div id="particles-js"></div>
+
+
+<!-- scripts -->
+<script type="text/javascript" src="{{ url_for('static', filename='particles.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='app.js') }}"></script>
+
+
+</body>
+</html>

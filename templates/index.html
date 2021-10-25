@@ -1,57 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Vision 360</title>
-  <meta name="description" content="particles.js is a lightweight JavaScript library for creating particles.">
-  <meta name="author" content="Vincent Garreau" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <link rel="stylesheet" media="screen" href="{{ url_for('static', filename='style.css') }}">
-  <link rel="stylesheet" media="screen" href="{{ url_for('static', filename='styleform.css') }}">
+{% extends 'base.html' %}
+
+{% block head %}
+
+
+{% endblock %}
+
+{% block body %}
+
+<div class="container">
+
+  <h1 style="font-size:8vw; color:azure">VISION 360</h1>
   
-  <link rel="preconnect" href="https://fonts.gstatic.com">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet"> 
-</head>
-<body>
+</div>
 
-  
-  <div class="container">
-
-    <h1 style="font-size:10vw; color:azure">VISION 360</h1>
-    <!-- <div>
-
-      <img src="{{ url_for('video_motion') }}" />
-    </div> -->
-    <div>
-      <img src="{{ url_for('video_face') }}" />
-    </div>
-    <!-- <div>
-      <img src="{{ url_for('video_emotion') }}" />
-    </div> -->
-    <!-- <div>
-      <img src="{{ url_for('video_activity') }}" />
-    </div> -->
-    <!-- <div>
-      <img src="{{ url_for('video_fire') }}" />
-    </div> -->
-    <div class="drops">
-      <!-- <div class="drop drop-1"></div>
-      <div class="drop drop-2"></div>
-      <div class="drop drop-3"></div>
-      <div class="drop drop-4"></div>
-      <div class="drop drop-5"></div> -->
-    </div>
-    
-  </div>
-<!-- particles.js container -->
-
-<div id="particles-js"></div>
-
-
-<!-- scripts -->
-<script type="text/javascript" src="{{ url_for('static', filename='particles.js') }}"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='app.js') }}"></script>
-
-
-</body>
-</html>
+{% endblock %}

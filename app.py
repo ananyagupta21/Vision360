@@ -11,6 +11,7 @@ import tensorflow as tf
 from keras.preprocessing import image
 import pafy
 import youtube_dl
+import pickle
 
 app=Flask(__name__)
 cap=cv2.VideoCapture(0)
@@ -67,98 +68,165 @@ def gen_motion():
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
 
+# def gen_face():
+#     KNOWN_FACES_DIR = 'known_faces'
+#     TOLERANCE = 0.6
+#     FRAME_THICKNESS = 3
+#     FONT_THICKNESS = 2
+#     MODEL = 'hog'  # default: 'hog', other one can be 'cnn' - CUDA accelerated (if available) deep-learning pretrained model
+
+#     # video=cv2.VideoCapture('Cam4.mp4')
+#     video = cv2.VideoCapture(0)
+
+#     # Returns (R, G, B) from name
+#     def name_to_color(name):
+#         # Take 3 first letters, tolower()
+#         # lowercased character ord() value rage is 97 to 122, substract 97, multiply by 8
+#         color = [(ord(c.lower())-97)*8 for c in name[:3]]
+#         return color
+
+
+#     print('Loading known faces...')
+#     known_faces = []
+#     known_names = []
+
+#     # We oranize known faces as subfolders of KNOWN_FACES_DIR
+#     # Each subfolder's name becomes our label (name)
+#     for name in os.listdir(KNOWN_FACES_DIR):
+
+#         # Next we load every file of faces of known person
+#         for filename in os.listdir(f'{KNOWN_FACES_DIR}/{name}'):
+
+#             # Load an image
+#             image = face_recognition.load_image_file(f'{KNOWN_FACES_DIR}/{name}/{filename}')
+
+#             # Get 128-dimension face encoding
+#             # Always returns a list of found faces, for this purpose we take first face only (assuming one face per image as you can't be twice on one image)
+#             encoding = face_recognition.face_encodings(image)[0]
+
+#             # Append encodings and name
+#             known_faces.append(encoding)
+#             known_names.append(name)
+
+#     while True:
+#         ret, image= video.read()
+
+#         # This time we first grab face locations - we'll need them to draw boxes
+#         locations = face_recognition.face_locations(image, model=MODEL)
+
+#         encodings = face_recognition.face_encodings(image, locations)
+
+#         for face_encoding, face_location in zip(encodings, locations):
+
+#             # We use compare_faces (but might use face_distance as well)
+#             # Returns array of True/False values in order of passed known_faces
+#             results = face_recognition.compare_faces(known_faces, face_encoding, TOLERANCE)
+
+#             # Since order is being preserved, we check if any face was found then grab index
+#             # then label (name) of first matching known face withing a tolerance
+#             match = None
+#             if True in results:  # If at least one is true, get a name of first of found labels
+#                 match = known_names[results.index(True)]
+#                 print(f' - {match} from {results}')
+
+#                 # Each location contains positions in order: top, right, bottom, left
+#                 top_left = (face_location[3], face_location[0])
+#                 bottom_right = (face_location[1], face_location[2])
+
+#                 # Get color by name using our fancy function
+#                 color = name_to_color(match)
+
+#                 # Paint frame
+#                 cv2.rectangle(image, top_left, bottom_right, color, FRAME_THICKNESS)
+
+#                 # Now we need smaller, filled grame below for a name
+#                 # This time we use bottom in both corners - to start from bottom and move 50 pixels down
+#                 top_left = (face_location[3], face_location[2])
+#                 bottom_right = (face_location[1], face_location[2] + 22)
+
+#                 # Paint frame
+#                 cv2.rectangle(image, top_left, bottom_right, color, cv2.FILLED)
+
+#                 # Wite a name
+#                 cv2.putText(image, match, (face_location[3] + 10, face_location[2] + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), FONT_THICKNESS)
+
+#         # Show image
+#         # cv2.imshow(filename, image)
+#         ret, jpeg = cv2.imencode('.jpg', image)
+
+#         frame = jpeg.tobytes()
+#         yield (b'--frame\r\n'
+#                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+#         # if cv2.waitKey(1) & 0xFF == ord("q"):
+#         #     break
+#         # cv2.waitKey(0)
+#         # cv2.destroyWindow(filename)
+
 def gen_face():
-    KNOWN_FACES_DIR = 'known_faces'
-    TOLERANCE = 0.6
-    FRAME_THICKNESS = 3
-    FONT_THICKNESS = 2
-    MODEL = 'hog'  # default: 'hog', other one can be 'cnn' - CUDA accelerated (if available) deep-learning pretrained model
-
-    video=cv2.VideoCapture(0)
-
-    # Returns (R, G, B) from name
-    def name_to_color(name):
-        # Take 3 first letters, tolower()
-        # lowercased character ord() value rage is 97 to 122, substract 97, multiply by 8
-        color = [(ord(c.lower())-97)*8 for c in name[:3]]
-        return color
-
-
-    print('Loading known faces...')
-    known_faces = []
-    known_names = []
-
-    # We oranize known faces as subfolders of KNOWN_FACES_DIR
-    # Each subfolder's name becomes our label (name)
-    for name in os.listdir(KNOWN_FACES_DIR):
-
-        # Next we load every file of faces of known person
-        for filename in os.listdir(f'{KNOWN_FACES_DIR}/{name}'):
-
-            # Load an image
-            image = face_recognition.load_image_file(f'{KNOWN_FACES_DIR}/{name}/{filename}')
-
-            # Get 128-dimension face encoding
-            # Always returns a list of found faces, for this purpose we take first face only (assuming one face per image as you can't be twice on one image)
-            encoding = face_recognition.face_encodings(image)[0]
-
-            # Append encodings and name
-            known_faces.append(encoding)
-            known_names.append(name)
-
+    faceCascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_alt2.xml')
+    # load the known faces and embeddings saved in last file
+    data = pickle.loads(open('face_enc', "rb").read())
+    
+    print("Streaming started")
+    video_capture = cv2.VideoCapture(0)
+    # loop over frames from the video file stream
     while True:
-        ret, image= video.read()
-
-        # This time we first grab face locations - we'll need them to draw boxes
-        locations = face_recognition.face_locations(image, model=MODEL)
-
-        encodings = face_recognition.face_encodings(image, locations)
-
-        for face_encoding, face_location in zip(encodings, locations):
-
-            # We use compare_faces (but might use face_distance as well)
-            # Returns array of True/False values in order of passed known_faces
-            results = face_recognition.compare_faces(known_faces, face_encoding, TOLERANCE)
-
-            # Since order is being preserved, we check if any face was found then grab index
-            # then label (name) of first matching known face withing a tolerance
-            match = None
-            if True in results:  # If at least one is true, get a name of first of found labels
-                match = known_names[results.index(True)]
-                print(f' - {match} from {results}')
-
-                # Each location contains positions in order: top, right, bottom, left
-                top_left = (face_location[3], face_location[0])
-                bottom_right = (face_location[1], face_location[2])
-
-                # Get color by name using our fancy function
-                color = name_to_color(match)
-
-                # Paint frame
-                cv2.rectangle(image, top_left, bottom_right, color, FRAME_THICKNESS)
-
-                # Now we need smaller, filled grame below for a name
-                # This time we use bottom in both corners - to start from bottom and move 50 pixels down
-                top_left = (face_location[3], face_location[2])
-                bottom_right = (face_location[1], face_location[2] + 22)
-
-                # Paint frame
-                cv2.rectangle(image, top_left, bottom_right, color, cv2.FILLED)
-
-                # Wite a name
-                cv2.putText(image, match, (face_location[3] + 10, face_location[2] + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), FONT_THICKNESS)
-
-        # Show image
-        # cv2.imshow(filename, image)
+        # grab the frame from the threaded video stream
+        ret, frame = video_capture.read()
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = faceCascade.detectMultiScale(gray,
+                                            scaleFactor=1.1,
+                                            minNeighbors=5,
+                                            minSize=(60, 60),
+                                            flags=cv2.CASCADE_SCALE_IMAGE)
+    
+        # convert the input frame from BGR to RGB 
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        # the facial embeddings for face in input
+        encodings = face_recognition.face_encodings(rgb)
+        names = []
+        # loop over the facial embeddings incase
+        # we have multiple embeddings for multiple fcaes
+        for encoding in encodings:
+        #Compare encodings with encodings in data["encodings"]
+        #Matches contain array with boolean values and True for the embeddings it matches closely
+        #and False for rest
+            matches = face_recognition.compare_faces(data["encodings"],
+            encoding)
+            #set name =inknown if no encoding matches
+            name = "Unknown"
+            # check to see if we have found a match
+            if True in matches:
+                #Find positions at which we get True and store them
+                matchedIdxs = [i for (i, b) in enumerate(matches) if b]
+                counts = {}
+                # loop over the matched indexes and maintain a count for
+                # each recognized face face
+                for i in matchedIdxs:
+                    #Check the names at respective indexes we stored in matchedIdxs
+                    name = data["names"][i]
+                    #increase count for the name we got
+                    counts[name] = counts.get(name, 0) + 1
+                #set name which has highest count
+                name = max(counts, key=counts.get)
+    
+    
+            # update the list of names
+            names.append(name)
+            # loop over the recognized faces
+            for ((x, y, w, h), name) in zip(faces, names):
+                # rescale the face coordinates
+                # draw the predicted face name on the image
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                cv2.putText(frame, name, (x, y), cv2.FONT_HERSHEY_SIMPLEX,
+                0.75, (0, 255, 0), 2)
+        image = cv2.resize(frame, (1280,720))
         ret, jpeg = cv2.imencode('.jpg', image)
 
         frame = jpeg.tobytes()
+        
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
-        # if cv2.waitKey(1) & 0xFF == ord("q"):
-        #     break
-        # cv2.waitKey(0)
-        # cv2.destroyWindow(filename)
 
 def gen_emotion():
     faceCascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -201,7 +269,8 @@ def gen_activity():
     net = cv2.dnn.readNet("resnet-34_kinetics.onnx")
 
     print("[INFO] accessing video stream...")
-    vs = cv2.VideoCapture('20211017181851.mp4')
+    # vs = cv2.VideoCapture('20211017181851.mp4')
+    vs = cv2.VideoCapture('Cam4.mp4')
 
     while True:
         
@@ -251,11 +320,13 @@ def gen_activity():
 def gen_fire():
     model = tf.keras.models.load_model('InceptionV3.h5')
     # cap=cv2.VideoCapture('20211017181851.mp4')
-    url= "https://www.youtube.com/watch?v=whlymAuRtzU"
-    video = pafy.new(url)
-    best = video.getbest(preftype="mp4")
-    cap = cv2.VideoCapture()
-    cap.open(best.url)  
+    # cap=cv2.VideoCapture('Cam4.mp4')
+    cap=cv2.VideoCapture('fire.mp4')
+    # url= "https://www.youtube.com/watch?v=whlymAuRtzU"
+    # video = pafy.new(url)
+    # best = video.getbest(preftype="mp4")
+    # cap = cv2.VideoCapture()
+    # cap.open(best.url)  
     while True:
         _, frame = cap.read()
         if not _:
@@ -286,6 +357,10 @@ def gen_fire():
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/video')
+def video():
+    return render_template('video.html')
 
 @app.route('/login')
 def login():
@@ -343,6 +418,10 @@ def video_fire():
 #             return redirect(url_for('welcome'))
 #         else:
 #             return redirect(url_for('register'))
+
+@app.route("/register", methods = ["POST", "GET"])
+def register():
+    return render_template('register.html')
 
 if __name__=="__main__":
     app.run(debug=True)
